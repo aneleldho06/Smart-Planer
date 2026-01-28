@@ -6,6 +6,7 @@ import { WeeklyView } from './views/WeeklyView';
 import { MonthlyView } from './views/MonthlyView';
 import { AIChatView } from './views/AIChatView';
 import { motion, AnimatePresence } from 'framer-motion';
+import bgImage from './assets/background.jpg';
 
 function App() {
   const { currentView } = useUIStore();
@@ -26,7 +27,10 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen w-full bg-cover bg-fixed bg-center transition-colors">
+    <div
+      className="min-h-screen w-full bg-cover bg-fixed bg-center transition-colors"
+      style={{ backgroundImage: `url(${bgImage})` }}
+    >
       {/* Decorative ambient blobs */}
       <div className="fixed -top-40 -left-40 h-96 w-96 rounded-full bg-teal-400/20 blur-3xl filter dark:bg-teal-900/20" />
       <div className="fixed top-20 -right-20 h-72 w-72 rounded-full bg-purple-400/20 blur-3xl filter dark:bg-purple-900/20" />
