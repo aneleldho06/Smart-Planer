@@ -6,7 +6,7 @@ import { WeeklyView } from './views/WeeklyView';
 import { MonthlyView } from './views/MonthlyView';
 import { AIChatView } from './views/AIChatView';
 import { motion, AnimatePresence } from 'framer-motion';
-import bgImage from './assets/background.jpg';
+import bgImage from './assets/background_v2.png';
 
 function App() {
   const { currentView } = useUIStore();
