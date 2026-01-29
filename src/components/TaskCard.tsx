@@ -1,6 +1,6 @@
 import React from 'react';
-import type { Task } from '../stores/taskStore';
-import { Check, Trash2, Clock } from 'lucide-react';
+import { useTaskStore, type Task } from '../stores/taskStore';
+import { Check, Trash2, Clock, Star } from 'lucide-react';
 import clsx from 'clsx';
 import { motion } from 'framer-motion';
 
@@ -56,13 +56,28 @@ export const TaskCard: React.FC<TaskCardProps> = ({ task, onToggle, onDelete }) 
                 </div>
             </div>
 
-            <button
-                onClick={() => onDelete(task.id)}
-                className="invisible group-hover:visible rounded-lg p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all opacity-0 group-hover:opacity-100"
-                aria-label="Delete task"
-            >
-                <Trash2 size={18} />
-            </button>
+            <div className="flex items-center gap-1">
+                <button
+                    onClick={(e) => { e.stopPropagation(); useTaskStore.getState().togglePriority(task.id); }}
+                    className={clsx(
+                        "rounded-lg p-2 transition-all",
+                        task.isPriority
+                            ? "text-yellow-400 opacity-100"
+                            : "text-slate-300 dark:text-slate-600 opacity-0 group-hover:opacity-100 hover:text-yellow-400"
+                    )}
+                    aria-label="Toggle priority"
+                >
+                    <Star size={18} className={task.isPriority ? "fill-yellow-400" : ""} />
+                </button>
+
+                <button
+                    onClick={() => onDelete(task.id)}
+                    className="invisible group-hover:visible rounded-lg p-2 text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-900/20 transition-all opacity-0 group-hover:opacity-100"
+                    aria-label="Delete task"
+                >
+                    <Trash2 size={18} />
+                </button>
+            </div>
         </motion.div>
     );
 };

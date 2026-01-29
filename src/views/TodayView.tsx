@@ -1,25 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import { useTaskStore } from '../stores/taskStore';
+import { useUIStore } from '../stores/uiStore';
 import { TaskCard } from '../components/TaskCard';
+import { TimelineSection } from '../components/TimelineSection';
+import { PrioritiesSection } from '../components/PrioritiesSection';
+import { NotesSection } from '../components/NotesSection';
+import { HeartMotivation } from '../components/HeartMotivation';
 import { format } from 'date-fns';
-import { Plus, X, Clock } from 'lucide-react';
+import { Plus, X, Clock, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 export const TodayView: React.FC = () => {
     const { tasks, addTask, toggleTask, deleteTask, checkDailyReset } = useTaskStore();
-    const [currentTime, setCurrentTime] = useState(new Date());
+    const { theme, toggleTheme } = useUIStore();
+
+    // Local state
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [newTaskTitle, setNewTaskTitle] = useState('');
     const [newTaskTime, setNewTaskTime] = useState('');
 
     useEffect(() => {
-        // Check for daily reset on mount
         checkDailyReset();
-
-        const timer = setInterval(() => {
-            setCurrentTime(new Date());
-        }, 1000); // Live clock
-        return () => clearInterval(timer);
     }, [checkDailyReset]);
 
     const activeTasks = tasks.filter((t) => !t.completed);
@@ -32,10 +33,6 @@ export const TodayView: React.FC = () => {
         return a.scheduledTime.localeCompare(b.scheduledTime);
     });
 
-    const completionPercentage = tasks.length > 0
-        ? Math.round((completedTasks.length / tasks.length) * 100)
-        : 0;
-
     const handleAddTask = (e: React.FormEvent) => {
         e.preventDefault();
         if (newTaskTitle.trim()) {
@@ -46,85 +43,97 @@ export const TodayView: React.FC = () => {
         }
     };
 
-    const getGreeting = () => {
-        const hours = currentTime.getHours();
-        if (hours < 12) return 'Good Morning!';
-        if (hours < 18) return 'Good Afternoon!';
-        return 'Good Evening!';
-    };
-
     return (
-        <div className="flex flex-col space-y-6 pb-24">
-            {/* Header */}
-            <header className="flex flex-col space-y-1">
-                <h2 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-teal-600 to-indigo-600 bg-clip-text text-transparent dark:from-teal-400 dark:to-indigo-400">
-                    {getGreeting()}
-                </h2>
-                <div className="flex items-baseline justify-between">
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                        {format(currentTime, 'EEEE, d MMM yyyy')}
-                    </p>
-                    <p className="text-2xl font-light text-slate-400 dark:text-slate-500 tabular-nums">
-                        {format(currentTime, 'HH:mm')}
-                    </p>
-                </div>
-            </header>
+        <div className="flex h-[calc(100vh-140px)] w-full flex-col gap-6 md:flex-row">
 
-            {/* Progress */}
-            <div className="glass-panel relative overflow-hidden rounded-2xl p-6 transition-all hover:shadow-lg">
-                <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm font-semibold text-slate-700 dark:text-slate-200">Daily Progress</span>
-                    <span className="text-2xl font-bold text-primary">{completionPercentage}%</span>
+            {/* LEFT COLUMN: Timeline */}
+            <div className="w-full md:w-1/4">
+                <h2 className="mb-4 text-center text-xl font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">
+                    Today's Schedule
+                </h2>
+                <div className="h-[calc(100%-3rem)]">
+                    <TimelineSection />
                 </div>
-                <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700/50">
-                    <motion.div
-                        className="h-full bg-gradient-to-r from-teal-400 to-indigo-500"
-                        initial={{ width: 0 }}
-                        animate={{ width: `${completionPercentage}%` }}
-                        transition={{ duration: 1, ease: "easeOut" }}
-                    />
-                </div>
-                <p className="mt-2 text-xs text-slate-500 dark:text-slate-400 text-right">
-                    {completedTasks.length}/{tasks.length} tasks completed
-                </p>
             </div>
 
-            {/* Task List */}
-            <div className="flex flex-col space-y-2">
-                <div className="flex items-center justify-between">
-                    <h3 className="text-lg font-semibold text-slate-800 dark:text-slate-200">To Do</h3>
+            {/* MIDDLE COLUMN: To-Do List */}
+            <div className="flex w-full flex-col md:w-2/4">
+                <div className="glass-panel relative flex h-full flex-col overflow-hidden rounded-3xl p-6 shadow-xl">
+                    <div className="mb-6 flex items-center justify-between">
+                        <h2 className="text-2xl font-bold uppercase text-slate-800 dark:text-slate-100">To-Do List</h2>
+                        <button
+                            onClick={() => setIsModalOpen(true)}
+                            className="glass-button flex items-center gap-1 rounded-full px-4 py-2 text-sm font-bold"
+                        >
+                            <Plus size={16} /> ADD TASK
+                        </button>
+                    </div>
+
+                    <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
+                        <AnimatePresence mode="popLayout">
+                            {sortedActiveTasks.length === 0 && completedTasks.length === 0 && (
+                                <motion.div
+                                    initial={{ opacity: 0 }}
+                                    animate={{ opacity: 1 }}
+                                    className="flex h-40 items-center justify-center text-slate-400 dark:text-slate-500"
+                                >
+                                    <p>No tasks yet. Plan your day!</p>
+                                </motion.div>
+                            )}
+
+                            {sortedActiveTasks.map((task) => (
+                                <TaskCard key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
+                            ))}
+
+                            {completedTasks.length > 0 && (
+                                <>
+                                    <div className="py-4 text-center text-xs font-bold uppercase tracking-widest text-slate-400 dark:text-slate-600">
+                                        Completed
+                                    </div>
+                                    {completedTasks.map((task) => (
+                                        <TaskCard key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
+                                    ))}
+                                </>
+                            )}
+                        </AnimatePresence>
+                    </div>
+
+                    {/* Bottom Heart Section */}
+                    <div className="mt-4 border-t border-slate-200 pt-2 dark:border-slate-700/50">
+                        <HeartMotivation />
+                    </div>
+                </div>
+            </div>
+
+            {/* RIGHT COLUMN: Priorities, Notes, Theme Toggle */}
+            <div className="flex w-full flex-col md:w-1/4">
+                <div className="mb-4 flex items-center justify-end gap-4">
+                    <h2 className="flex-1 text-center text-xl font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">
+                        Overview
+                    </h2>
+                    {/* Theme Toggle Widget */}
                     <button
-                        onClick={() => setIsModalOpen(true)}
-                        className="glass-button flex items-center gap-1 rounded-full px-3 py-1.5 text-xs font-semibold"
+                        onClick={toggleTheme}
+                        className="flex items-center gap-2 rounded-full glass-card px-3 py-1.5 transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
                     >
-                        <Plus size={14} /> Add Task
+                        {theme === 'light' ? (
+                            <>
+                                <Sun size={16} className="text-amber-500" />
+                                <span className="text-xs font-bold text-slate-600">DAY</span>
+                            </>
+                        ) : (
+                            <>
+                                <Moon size={16} className="text-indigo-400" />
+                                <span className="text-xs font-bold text-slate-300">NIGHT</span>
+                            </>
+                        )}
                     </button>
                 </div>
 
-                <AnimatePresence mode="popLayout">
-                    {sortedActiveTasks.length === 0 && completedTasks.length === 0 && (
-                        <motion.div
-                            initial={{ opacity: 0 }}
-                            animate={{ opacity: 1 }}
-                            className="py-10 text-center text-slate-400 dark:text-slate-500"
-                        >
-                            <p>No tasks yet. Enjoy your day!</p>
-                        </motion.div>
-                    )}
-
-                    {sortedActiveTasks.map((task) => (
-                        <TaskCard key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
-                    ))}
-
-                    {completedTasks.length > 0 && (
-                        <>
-                            <div className="py-2 text-xs font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider">Completed</div>
-                            {completedTasks.map((task) => (
-                                <TaskCard key={task.id} task={task} onToggle={toggleTask} onDelete={deleteTask} />
-                            ))}
-                        </>
-                    )}
-                </AnimatePresence>
+                <div className="flex h-[calc(100%-3rem)] flex-col">
+                    <PrioritiesSection />
+                    <NotesSection />
+                </div>
             </div>
 
             {/* Add Task Modal */}
@@ -183,3 +192,4 @@ export const TodayView: React.FC = () => {
         </div>
     );
 };
+

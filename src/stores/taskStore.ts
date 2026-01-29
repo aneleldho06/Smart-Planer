@@ -8,6 +8,7 @@ export interface Task {
     completed: boolean;
     createdAt: number;
     scheduledTime?: string; // HH:mm format
+    isPriority?: boolean;
 }
 
 interface TaskState {
@@ -17,6 +18,9 @@ interface TaskState {
     toggleTask: (id: string) => void;
     deleteTask: (id: string) => void;
     checkDailyReset: () => void;
+    togglePriority: (id: string) => void;
+    notes: string;
+    updateNotes: (content: string) => void;
 }
 
 export const useTaskStore = create<TaskState>()(
@@ -24,6 +28,7 @@ export const useTaskStore = create<TaskState>()(
         (set, get) => ({
             tasks: [],
             lastActiveDate: Date.now(),
+            notes: '',
 
             addTask: (title: string, scheduledTime?: string) => {
                 const newTask: Task = {
@@ -48,6 +53,18 @@ export const useTaskStore = create<TaskState>()(
                 set((state) => ({
                     tasks: state.tasks.filter((t) => t.id !== id),
                 }));
+            },
+
+            togglePriority: (id: string) => {
+                set((state) => ({
+                    tasks: state.tasks.map((t) =>
+                        t.id === id ? { ...t, isPriority: !t.isPriority } : t
+                    ),
+                }));
+            },
+
+            updateNotes: (content: string) => {
+                set({ notes: content });
             },
 
             checkDailyReset: () => {

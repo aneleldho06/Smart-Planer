@@ -9,7 +9,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import bgImage from './assets/background_v2.png';
 
 function App() {
-  const { currentView } = useUIStore();
+  const { currentView, theme } = useUIStore();
 
   const renderView = () => {
     switch (currentView) {
@@ -28,15 +28,19 @@ function App() {
 
   return (
     <div
-      className="min-h-screen w-full bg-cover bg-fixed bg-center transition-colors"
-      style={{ backgroundImage: `url(${bgImage})` }}
+      className={`min-h-screen w-full transition-colors ${theme}`}
     >
-      {/* Decorative ambient blobs */}
-      <div className="fixed -top-40 -left-40 h-96 w-96 rounded-full bg-teal-400/20 blur-3xl filter dark:bg-teal-900/20" />
-      <div className="fixed top-20 -right-20 h-72 w-72 rounded-full bg-purple-400/20 blur-3xl filter dark:bg-purple-900/20" />
-      <div className="fixed bottom-0 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-blue-400/20 blur-3xl filter dark:bg-blue-900/20" />
+      <div
+        className="fixed inset-0 w-full h-full bg-cover bg-fixed bg-center z-0"
+        style={{ backgroundImage: `url(${bgImage})` }}
+      />
 
-      <main className="relative mx-auto min-h-screen max-w-md bg-white/10 px-4 pt-8 shadow-2xl backdrop-blur-sm md:max-w-xl dark:bg-black/10">
+      {/* Decorative ambient blobs */}
+      <div className="fixed -top-40 -left-40 h-96 w-96 rounded-full bg-teal-400/20 blur-3xl filter dark:bg-teal-900/20 z-0" />
+      <div className="fixed top-20 -right-20 h-72 w-72 rounded-full bg-purple-400/20 blur-3xl filter dark:bg-purple-900/20 z-0" />
+      <div className="fixed bottom-0 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-blue-400/20 blur-3xl filter dark:bg-blue-900/20 z-0" />
+
+      <main className="relative z-10 mx-auto min-h-screen w-full max-w-7xl px-4 pt-4 md:px-8 md:pt-8">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView}
