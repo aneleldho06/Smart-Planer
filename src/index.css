@@ -4,16 +4,27 @@
 
 @layer utilities {
   .glass-panel {
-    @apply backdrop-blur-xl bg-white/40 dark:bg-slate-900/40 border border-white/30 dark:border-white/10;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    /* Light Mode: Soft Frosted Glass (Reference 1) */
+    @apply backdrop-blur-2xl bg-white/80 border border-white/60 shadow-[0_8px_32px_rgba(31, 38, 135, 0.1)];
+
+    /* Dark Mode: Deep Matte Luxury (Reference 2) */
+    @apply dark:bg-[#121212]/95 dark:backdrop-blur-xl dark:border-white/5 dark:shadow-[0_4px_20px_rgba(0, 0, 0, 0.5)];
   }
 
   .glass-card {
-    @apply backdrop-blur-md bg-white/60 dark:bg-slate-800/50 border border-white/40 dark:border-white/10 shadow-sm hover:shadow-md transition-all duration-300;
+    /* Light Mode: Floating Cards */
+    @apply backdrop-blur-xl bg-white/60 border border-white/50 shadow-sm hover:shadow-md transition-all duration-300;
+
+    /* Dark Mode: Solid Dark Cards */
+    @apply dark:bg-[#1E1E1E] dark:border-white/5 dark:hover:bg-[#252525] dark:shadow-none;
   }
 
   .glass-button {
-    @apply backdrop-blur-sm bg-primary/90 hover:bg-primary text-white shadow-lg hover:shadow-primary/30 transition-all duration-300 active:scale-95;
+    /* Light Mode: Pill Buttons */
+    @apply backdrop-blur-md bg-white/90 text-slate-800 shadow-sm hover:bg-white hover:text-primary hover:shadow-md transition-all duration-300 active:scale-95 border border-white/50;
+
+    /* Dark Mode: Dark Surface Buttons */
+    @apply dark:bg-[#2A2A2A] dark:text-white dark:border-white/5 dark:hover:bg-[#333333];
   }
 }
 

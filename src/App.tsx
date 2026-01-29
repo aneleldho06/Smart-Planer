@@ -1,6 +1,5 @@
 import { useUIStore } from './stores/uiStore';
 import { BottomNav } from './components/BottomNav';
-import { MotivateButton } from './components/MotivateButton';
 import { TodayView } from './views/TodayView';
 import { WeeklyView } from './views/WeeklyView';
 import { MonthlyView } from './views/MonthlyView';
@@ -54,7 +53,6 @@ function App() {
           </motion.div>
         </AnimatePresence>
 
-        <MotivateButton />
         <BottomNav />
       </main>
     </div>
