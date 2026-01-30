@@ -79,33 +79,46 @@ export const useTaskStore = create<TaskState>((set, get) => {
         },
 
         addTask: async (title: string, scheduledTime?: string) => {
+            console.log('Attempting to add task:', { title, scheduledTime });
             const { data: { user } } = await supabase.auth.getUser();
-            if (!user) return;
+
+            if (!user) {
+                console.error('User not authenticated, cannot add task');
+                return;
+            }
 
             const newTaskDB = {
                 user_id: user.id,
                 title,
                 completed: false,
                 created_at: Date.now(),
-                scheduled_time: scheduledTime,
+                scheduled_time: scheduledTime || null,
                 is_priority: false
             };
 
             const { data, error } = await supabase.from('tasks').insert(newTaskDB).select();
 
             if (error) {
-                console.error('Error adding task:', error);
+                console.error('Error adding task to Supabase:', error);
                 return;
             }
 
-            // Manually update state to ensure UI responsiveness, handling potential race condition with Realtime
-            if (data) {
+            console.log('Task added to Supabase:', data);
+
+            if (data && data[0]) {
                 const newLocalTask = mapRecord(data[0]);
                 set((state) => {
-                    // Prevent duplicate if Realtime already added it (unlikely this fast, but good safety)
-                    if (state.tasks.some(t => t.id === newLocalTask.id)) return state;
+                    // Prevent duplicate if Realtime already added it
+                    if (state.tasks.some(t => t.id === newLocalTask.id)) {
+                        console.log('Task already exists in state');
+                        return state;
+                    }
+                    console.log('Updating local state with new task');
                     return { tasks: [newLocalTask, ...state.tasks] };
                 });
+            } else {
+                console.warn('No data returned from insert, fetching all tasks...');
+                await get().fetchTasks();
             }
         },
 
