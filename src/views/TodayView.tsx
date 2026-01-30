@@ -6,7 +6,7 @@ import { TimelineSection } from '../components/TimelineSection';
 import { PrioritiesSection } from '../components/PrioritiesSection';
 import { NotesSection } from '../components/NotesSection';
 import { HeartMotivation } from '../components/HeartMotivation';
-import { format } from 'date-fns';
+
 import { Plus, X, Clock, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
