@@ -91,12 +91,22 @@ export const useTaskStore = create<TaskState>((set, get) => {
                 is_priority: false
             };
 
-            // We let the DB setup the ID usually, but if we want optimistic updates we might need it back.
-            // insert returns data if we ask for it using select()
-            const { error } = await supabase.from('tasks').insert(newTaskDB).select();
+            const { data, error } = await supabase.from('tasks').insert(newTaskDB).select();
 
-            if (error) console.error('Error adding task:', error);
-            // Realtime subscription will handle the UI update
+            if (error) {
+                console.error('Error adding task:', error);
+                return;
+            }
+
+            // Manually update state to ensure UI responsiveness, handling potential race condition with Realtime
+            if (data) {
+                const newLocalTask = mapRecord(data[0]);
+                set((state) => {
+                    // Prevent duplicate if Realtime already added it (unlikely this fast, but good safety)
+                    if (state.tasks.some(t => t.id === newLocalTask.id)) return state;
+                    return { tasks: [newLocalTask, ...state.tasks] };
+                });
+            }
         },
 
         toggleTask: async (id: string) => {
