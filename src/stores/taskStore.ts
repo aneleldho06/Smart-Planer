@@ -68,6 +68,7 @@ export const useTaskStore = create<TaskState>((set, get) => {
             const { data, error } = await supabase
                 .from('tasks')
                 .select('*')
+                .eq('user_id', user.id)  // Added: Explicit user_id filter
                 .eq('task_date', todayISO)
                 .order('created_at', { ascending: false });
 
@@ -236,6 +237,7 @@ export const useTaskStore = create<TaskState>((set, get) => {
                         filter: `user_id=eq.${user.id}`
                     },
                     payload => {
+                        console.log('Realtime payload:', payload);  // Added: Debug log for payloads
                         const { eventType, new: newRecord, old: oldRecord } = payload;
                         const todayISO = getTodayISO();
 
@@ -258,18 +260,20 @@ export const useTaskStore = create<TaskState>((set, get) => {
                         if (eventType === 'DELETE') {
                             set(state => ({
                                 tasks: state.tasks.filter(t => t.id !== oldRecord.id)
-                            }));
-                        }
-                    }
+                            })
+                        });
+        }
                 )
-                .subscribe();
+    .subscribe(status => {
+        console.log('Subscription status:', status);  // Added: Debug subscription success
+    });
         },
 
-        unsubscribeFromTasks: () => {
-            if (realtimeChannel) {
-                supabase.removeChannel(realtimeChannel);
-                realtimeChannel = null;
-            }
-        }
+unsubscribeFromTasks: () => {
+    if (realtimeChannel) {
+        supabase.removeChannel(realtimeChannel);
+        realtimeChannel = null;
+    }
+}
     };
 });
