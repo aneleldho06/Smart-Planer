@@ -1,8 +1,15 @@
 import React, { useState, useRef, useEffect } from 'react';
 import { Send, User, Sparkles } from 'lucide-react';
-import { generateAIResponse, type AIChatMessage } from '../utils/mockAI';
+import { supabase } from '../lib/supabase';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
+
+export interface AIChatMessage {
+    id: string;
+    role: 'user' | 'ai';
+    content: string;
+    timestamp: number;
+}
 
 export const AIChatView: React.FC = () => {
     const [messages, setMessages] = useState<AIChatMessage[]>([
@@ -40,16 +47,46 @@ export const AIChatView: React.FC = () => {
         setInput('');
         setIsTyping(true);
 
-        const responseText = await generateAIResponse(userMsg.content);
+        try {
+            const { data, error } = await supabase.functions.invoke('ai-chat-proxy', {
+                body: {
+                    messages: [
+                        // System prompt could be added here if not in Edge Function
+                        { role: 'system', content: 'You are a helpful and motivational productivity assistant.' },
+                        ...messages.map(m => ({ role: m.role === 'ai' ? 'assistant' : 'user', content: m.content })).slice(-5), // Send context
+                        { role: 'user', content: userMsg.content }
+                    ]
+                }
+            });
 
-        setIsTyping(false);
-        const aiMsg: AIChatMessage = {
-            id: (Date.now() + 1).toString(),
-            role: 'ai',
-            content: responseText,
-            timestamp: Date.now()
-        };
-        setMessages(prev => [...prev, aiMsg]);
+            if (error) {
+                console.error('AI Function Error:', error);
+                throw error;
+            }
+
+            // Assuming data includes standard chat completion format or just content depending on our edge function
+            // Our Edge function returns the full OpenAI/Grok response object
+            const aiContent = data.choices?.[0]?.message?.content || "Sorry, I couldn't understand that.";
+
+            const aiMsg: AIChatMessage = {
+                id: (Date.now() + 1).toString(),
+                role: 'ai',
+                content: aiContent,
+                timestamp: Date.now()
+            };
+            setMessages(prev => [...prev, aiMsg]);
+        } catch (err) {
+            console.error('Failed to get AI response:', err);
+            const errorMsg: AIChatMessage = {
+                id: (Date.now() + 1).toString(),
+                role: 'ai',
+                content: "I'm having trouble connecting to my brain right now. Please try again later.",
+                timestamp: Date.now()
+            };
+            setMessages(prev => [...prev, errorMsg]);
+        } finally {
+            setIsTyping(false);
+        }
     };
 
     return (

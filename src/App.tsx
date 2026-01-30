@@ -1,14 +1,33 @@
+import { useEffect } from 'react';
 import { useUIStore } from './stores/uiStore';
+import { useAuthStore } from './stores/authStore';
+import { useTaskStore } from './stores/taskStore';
 import { BottomNav } from './components/BottomNav';
 import { TodayView } from './views/TodayView';
 import { WeeklyView } from './views/WeeklyView';
 import { MonthlyView } from './views/MonthlyView';
 import { AIChatView } from './views/AIChatView';
+import { Auth } from './components/Auth';
 import { motion, AnimatePresence } from 'framer-motion';
 import bgImage from './assets/background_v2.png';
 
 function App() {
   const { currentView, theme } = useUIStore();
+  const { user, loading, initialize } = useAuthStore();
+  const { subscribeToTasks, unsubscribeFromTasks, fetchTasks } = useTaskStore();
+
+  useEffect(() => {
+    initialize();
+  }, [initialize]);
+
+  useEffect(() => {
+    if (user) {
+      fetchTasks();
+      subscribeToTasks();
+    } else {
+      unsubscribeFromTasks();
+    }
+  }, [user, fetchTasks, subscribeToTasks, unsubscribeFromTasks]);
 
   const renderView = () => {
     switch (currentView) {
@@ -25,6 +44,18 @@ function App() {
     }
   };
 
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-100">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-indigo-600"></div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Auth />;
+  }
+
   return (
     <div
       className={`min-h-screen w-full transition-colors ${theme}`}
@@ -39,7 +70,7 @@ function App() {
       <div className="fixed top-20 -right-20 h-72 w-72 rounded-full bg-purple-400/20 blur-3xl filter dark:bg-purple-900/20 z-0" />
       <div className="fixed bottom-0 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-blue-400/20 blur-3xl filter dark:bg-blue-900/20 z-0" />
 
-      <main className="relative z-10 mx-auto min-h-screen w-full max-w-7xl px-4 pt-4 md:px-8 md:pt-8">
+      <main className="relative z-10 mx-auto min-h-screen w-full max-w-7xl px-4 pt-4 md:px-8 md:pt-8 bg-white/10 backdrop-blur-md rounded-xl shadow-lg m-4 border border-white/20">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView}
@@ -47,7 +78,7 @@ function App() {
             animate={{ opacity: 1, x: 0 }}
             exit={{ opacity: 0, x: -10 }}
             transition={{ duration: 0.2 }}
-            className="h-full"
+            className="h-full pb-20"
           >
             {renderView()}
           </motion.div>

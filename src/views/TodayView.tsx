@@ -111,23 +111,42 @@ export const TodayView: React.FC = () => {
                     <h2 className="flex-1 text-center text-xl font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">
                         Overview
                     </h2>
+                    import {useAuthStore} from '../stores/authStore';
+                    import {LogOut} from 'lucide-react';
+// ... previous imports
+
+export const TodayView: React.FC = () => {
+    const {tasks, addTask, toggleTask, deleteTask, checkDailyReset} = useTaskStore();
+                    const {theme, toggleTheme} = useUIStore();
+                    const {signOut} = useAuthStore();
+                    // ... (rest of the component until the theme toggle section)
+
                     {/* Theme Toggle Widget */}
-                    <button
-                        onClick={toggleTheme}
-                        className="flex items-center gap-2 rounded-full glass-card px-3 py-1.5 transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
-                    >
-                        {theme === 'light' ? (
-                            <>
-                                <Sun size={16} className="text-amber-500" />
-                                <span className="text-xs font-bold text-slate-600">DAY</span>
-                            </>
-                        ) : (
-                            <>
-                                <Moon size={16} className="text-indigo-400" />
-                                <span className="text-xs font-bold text-slate-300">NIGHT</span>
-                            </>
-                        )}
-                    </button>
+                    <div className="flex gap-2">
+                        <button
+                            onClick={toggleTheme}
+                            className="flex items-center gap-2 rounded-full glass-card px-3 py-1.5 transition-all hover:bg-slate-100 dark:hover:bg-slate-700"
+                        >
+                            {theme === 'light' ? (
+                                <>
+                                    <Sun size={16} className="text-amber-500" />
+                                    <span className="text-xs font-bold text-slate-600">DAY</span>
+                                </>
+                            ) : (
+                                <>
+                                    <Moon size={16} className="text-indigo-400" />
+                                    <span className="text-xs font-bold text-slate-300">NIGHT</span>
+                                </>
+                            )}
+                        </button>
+                        <button
+                            onClick={() => signOut()}
+                            className="flex items-center gap-2 rounded-full glass-card px-3 py-1.5 transition-all hover:bg-red-50 dark:hover:bg-red-900/20 group"
+                            title="Sign Out"
+                        >
+                            <LogOut size={16} className="text-slate-400 group-hover:text-red-500 transition-colors" />
+                        </button>
+                    </div>
                 </div>
 
                 <div className="flex h-[calc(100%-3rem)] flex-col">

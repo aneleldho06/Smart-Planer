@@ -4,11 +4,16 @@
 
 @layer utilities {
   .glass-panel {
-    /* Light Mode: Soft Frosted Glass (Reference 1) */
-    @apply backdrop-blur-2xl bg-white/80 border border-white/60 shadow-[0_8px_32px_rgba(31, 38, 135, 0.1)];
+    /* Light Mode: Soft Frosted Glass */
+    @apply backdrop-blur-2xl bg-white/80 border border-white/60;
+    box-shadow: 0 8px 32px rgba(31, 38, 135, 0.1);
 
-    /* Dark Mode: Deep Matte Luxury (Reference 2) */
-    @apply dark:bg-[#121212]/95 dark:backdrop-blur-xl dark:border-white/5 dark:shadow-[0_4px_20px_rgba(0, 0, 0, 0.5)];
+    /* Dark Mode: Deep Matte Luxury */
+    @apply dark:bg-[#121212]/95 dark:backdrop-blur-xl dark:border-white/5;
+  }
+
+  :is(.dark .glass-panel) {
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.5);
   }
 
   .glass-card {
