@@ -12,9 +12,9 @@ import { useAuthStore } from '../stores/authStore';
 import { LogOut } from 'lucide-react';
 
 export const TodayView: React.FC = () => {
-    const { tasks, addTask, toggleTask, deleteTask, checkDailyReset } = useTaskStore();
+    const { tasks, addTask, toggleTask, deleteTask, checkDailyReset, fetchTasks, subscribeToTasks, unsubscribeFromTasks } = useTaskStore();
     const { theme, toggleTheme } = useUIStore();
-    const { signOut } = useAuthStore();
+    const { user, signOut } = useAuthStore();  // Add user from authStore to check logged in
 
     // Local state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -22,8 +22,13 @@ export const TodayView: React.FC = () => {
     const [newTaskTime, setNewTaskTime] = useState('');
 
     useEffect(() => {
-        checkDailyReset();
-    }, [checkDailyReset]);
+        if (user) {  // Only fetch/subscribe if logged in
+            fetchTasks();
+            subscribeToTasks();
+            checkDailyReset();
+        }
+        return () => unsubscribeFromTasks();  // Cleanup on unmount
+    }, [user, fetchTasks, subscribeToTasks, unsubscribeFromTasks, checkDailyReset]);
 
     const activeTasks = tasks.filter((t) => !t.completed);
     const completedTasks = tasks.filter((t) => t.completed);
@@ -65,7 +70,8 @@ export const TodayView: React.FC = () => {
                         <h2 className="text-2xl font-bold uppercase text-slate-800 dark:text-slate-100">To-Do List</h2>
                         <button
                             onClick={() => setIsModalOpen(true)}
-                            className="glass-button flex items-center gap-1 rounded-full px-4 py-2 text-sm font-bold"
+                            disabled={!user}  // Disable if not logged in
+                            className="glass-button flex items-center gap-1 rounded-full px-4 py-2 text-sm font-bold disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                             <Plus size={16} /> ADD TASK
                         </button>
@@ -203,4 +209,3 @@ export const TodayView: React.FC = () => {
         </div>
     );
 };
-
