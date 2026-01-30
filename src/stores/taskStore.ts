@@ -1,16 +1,17 @@
 import { create } from 'zustand';
 import { supabase } from '../lib/supabase';
-import { isSameDay, startOfDay, endOfDay } from 'date-fns';
+import { isSameDay, format } from 'date-fns';
 import { RealtimeChannel } from '@supabase/supabase-js';
 
 export interface Task {
     id: string;
     title: string;
     completed: boolean;
-    createdAt: number;
+    createdAt: string; // Changed to string (ISO) for better compatibility
     scheduledTime?: string;
     isPriority?: boolean;
     userId?: string;
+    taskDate: string; // YYYY-MM-DD
 }
 
 interface TaskState {
@@ -19,9 +20,9 @@ interface TaskState {
     lastActiveDate: number;
     fetchTasks: () => Promise<void>;
     addTask: (title: string, scheduledTime?: string) => Promise<void>;
-    toggleTask: (id: string) => Promise<void>;
+    toggleTask: (id: string, currentStatus?: boolean) => Promise<void>;
     deleteTask: (id: string) => Promise<void>;
-    togglePriority: (id: string) => Promise<void>;
+    togglePriority: (id: string, currentPriority?: boolean) => Promise<void>;
     updateNotes: (content: string) => void;
     checkDailyReset: () => void;
     subscribeToTasks: () => void;
@@ -37,11 +38,14 @@ export const useTaskStore = create<TaskState>((set, get) => {
         id: r.id,
         title: r.title,
         completed: r.completed,
-        createdAt: r.created_at,
+        createdAt: r.created_at, // Expecting ISO string from DB now
         scheduledTime: r.scheduled_time,
         isPriority: r.is_priority,
-        userId: r.user_id
+        userId: r.user_id,
+        taskDate: r.task_date
     });
+
+    const getTodayISO = () => format(new Date(), 'yyyy-MM-dd');
 
     return {
         tasks: [],
@@ -50,23 +54,22 @@ export const useTaskStore = create<TaskState>((set, get) => {
         notes: '',
 
         fetchTasks: async () => {
-            set({ loading: true });
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
                 set({ tasks: [], loading: false });
                 return;
             }
 
-            // Filter for today's tasks
-            const todayStart = startOfDay(new Date()).getTime();
-            const todayEnd = endOfDay(new Date()).getTime();
+            set({ loading: true });
+            const todayISO = getTodayISO();
 
+            // Use task_date for filtering if available, otherwise fallback to created_at range
+            // We prioritize task_date as it's timezone safe for "days"
             const { data, error } = await supabase
                 .from('tasks')
                 .select('*')
                 .eq('user_id', user.id)
-                .gte('created_at', todayStart)
-                .lte('created_at', todayEnd)
+                .eq('task_date', todayISO)
                 .order('created_at', { ascending: false });
 
             if (error) {
@@ -75,85 +78,137 @@ export const useTaskStore = create<TaskState>((set, get) => {
                 return;
             }
 
+            console.log('Fetched tasks:', data);
             set({ tasks: data ? data.map(mapRecord) : [], loading: false });
         },
 
         addTask: async (title: string, scheduledTime?: string) => {
-            console.log('Attempting to add task:', { title, scheduledTime });
             const { data: { user } } = await supabase.auth.getUser();
-
             if (!user) {
-                console.error('User not authenticated, cannot add task');
+                console.error('User not authenticated');
                 return;
             }
+
+            const todayISO = getTodayISO();
+            const nowISO = new Date().toISOString();
 
             const newTaskDB = {
                 user_id: user.id,
                 title,
                 completed: false,
-                created_at: Date.now(),
+                created_at: nowISO,            // Send ISO string
+                task_date: todayISO,           // Explicit date column
                 scheduled_time: scheduledTime || null,
                 is_priority: false
             };
+
+            console.log('Adding task:', newTaskDB);
+
+            // Optimistic update: Add to UI immediately
+            const optimisticId = crypto.randomUUID();
+            const optimisticTask: Task = {
+                id: optimisticId,
+                title,
+                completed: false,
+                createdAt: nowISO,
+                scheduledTime: scheduledTime,
+                isPriority: false,
+                userId: user.id,
+                taskDate: todayISO
+            };
+
+            set(state => ({ tasks: [optimisticTask, ...state.tasks] }));
 
             const { data, error } = await supabase.from('tasks').insert(newTaskDB).select();
 
             if (error) {
                 console.error('Error adding task to Supabase:', error);
+                // Rollback on error
+                set(state => ({ tasks: state.tasks.filter(t => t.id !== optimisticId) }));
                 return;
             }
 
-            console.log('Task added to Supabase:', data);
-
+            // Replace optimistic task with real one
             if (data && data[0]) {
-                const newLocalTask = mapRecord(data[0]);
-                set((state) => {
-                    // Prevent duplicate if Realtime already added it
-                    if (state.tasks.some(t => t.id === newLocalTask.id)) {
-                        console.log('Task already exists in state');
-                        return state;
-                    }
-                    console.log('Updating local state with new task');
-                    return { tasks: [newLocalTask, ...state.tasks] };
-                });
-            } else {
-                console.warn('No data returned from insert, fetching all tasks...');
-                await get().fetchTasks();
+                const realTask = mapRecord(data[0]);
+                set(state => ({
+                    tasks: state.tasks.map(t => t.id === optimisticId ? realTask : t)
+                }));
             }
         },
 
-        toggleTask: async (id: string) => {
-            // Find current status from local state to toggle
-            const task = get().tasks.find(t => t.id === id);
-            if (!task) return;
+        toggleTask: async (id: string, currentStatus: boolean | undefined) => {
+            // If currentStatus is provided, use it. Otherwise look it up.
+            let nextStatus = !currentStatus;
+
+            if (currentStatus === undefined) {
+                const task = get().tasks.find(t => t.id === id);
+                if (task) nextStatus = !task.completed;
+                else return; // Can't find task
+            }
+
+            // Optimistic Update
+            set(state => ({
+                tasks: state.tasks.map(t => t.id === id ? { ...t, completed: nextStatus } : t)
+            }));
 
             const { error } = await supabase
                 .from('tasks')
-                .update({ completed: !task.completed })
+                .update({ completed: nextStatus })
                 .eq('id', id);
 
-            if (error) console.error('Error toggling task:', error);
+            if (error) {
+                console.error('Error toggling task:', error);
+                // Rollback
+                set(state => ({
+                    tasks: state.tasks.map(t => t.id === id ? { ...t, completed: !nextStatus } : t)
+                }));
+            }
         },
 
         deleteTask: async (id: string) => {
+            const previousTasks = get().tasks;
+
+            // Optimistic Update
+            set(state => ({ tasks: state.tasks.filter(t => t.id !== id) }));
+
             const { error } = await supabase
                 .from('tasks')
                 .delete()
                 .eq('id', id);
 
-            if (error) console.error('Error deleting task:', error);
+            if (error) {
+                console.error('Error deleting task:', error);
+                set({ tasks: previousTasks }); // Rollback
+            }
         },
 
-        togglePriority: async (id: string) => {
-            const task = get().tasks.find(t => t.id === id);
-            if (!task) return;
+        togglePriority: async (id: string, currentPriority?: boolean) => {
+            let nextPriority = !currentPriority;
+
+            if (currentPriority === undefined) {
+                const task = get().tasks.find(t => t.id === id);
+                if (task) nextPriority = !task.isPriority;
+                else return;
+            }
+
+            // Optimistic Update
+            set(state => ({
+                tasks: state.tasks.map(t => t.id === id ? { ...t, isPriority: nextPriority } : t)
+            }));
 
             const { error } = await supabase
                 .from('tasks')
-                .update({ is_priority: !task.isPriority })
+                .update({ is_priority: nextPriority })
                 .eq('id', id);
 
-            if (error) console.error('Error toggling priority:', error);
+            if (error) {
+                console.error('Error toggling priority:', error);
+                // Rollback
+                set(state => ({
+                    tasks: state.tasks.map(t => t.id === id ? { ...t, isPriority: !nextPriority } : t)
+                }));
+            }
         },
 
         updateNotes: (content: string) => {
@@ -174,21 +229,49 @@ export const useTaskStore = create<TaskState>((set, get) => {
         subscribeToTasks: () => {
             if (realtimeChannel) return;
 
+            console.log('Subscribing to realtime tasks...');
+            // Need to ensure auth state is valid or rely on RLS
+
             realtimeChannel = supabase
                 .channel('tasks_channel')
-                .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, (payload) => {
+                .on('postgres_changes', {
+                    event: '*',
+                    schema: 'public',
+                    table: 'tasks'
+                    // filter: `user_id=eq.${user?.id}` // Ideally filter by user if RLS doesn't handle realtime filtering automatically (it does, but explicit is safer if RLS off)
+                }, (payload) => {
+                    console.log('Realtime payload received:', payload);
                     const { eventType, new: newRecord, old: oldRecord } = payload;
-                    const todayStart = startOfDay(new Date()).getTime();
-                    const todayEnd = endOfDay(new Date()).getTime();
+                    const todayISO = getTodayISO();
 
-                    // Check if a record belongs to "Today" (based on created_at)
                     const isToday = (record: any) => {
-                        return record.created_at >= todayStart && record.created_at <= todayEnd;
+                        // Check task_date first
+                        if (record.task_date) {
+                            return record.task_date === todayISO;
+                        }
+                        // Fallback to parsing created_at if task_date missing
+                        if (record.created_at) {
+                            try {
+                                return format(new Date(record.created_at), 'yyyy-MM-dd') === todayISO;
+                            } catch (e) {
+                                console.error('Error parsing date:', e);
+                                return false;
+                            }
+                        }
+                        return false;
                     };
 
                     set((state) => {
                         if (eventType === 'INSERT') {
                             if (isToday(newRecord)) {
+                                // De-duplicate: Check if we already have this ID (from optimistic update)
+                                const exists = state.tasks.some(t => t.id === newRecord.id);
+                                if (exists) {
+                                    // If it exists, we might want to update it to ensure it matches DB exactly
+                                    return {
+                                        tasks: state.tasks.map(t => t.id === newRecord.id ? mapRecord(newRecord) : t)
+                                    };
+                                }
                                 return { tasks: [mapRecord(newRecord), ...state.tasks] };
                             }
                         } else if (eventType === 'DELETE') {
@@ -201,18 +284,20 @@ export const useTaskStore = create<TaskState>((set, get) => {
                                     )
                                 };
                             } else {
-                                // If updated task is no longer today (unlikely) or just needs update
-                                return {
-                                    tasks: state.tasks.map((t) =>
-                                        t.id === newRecord.id ? mapRecord(newRecord) : t
-                                    )
-                                };
+                                // If task moved to another date or was unassigned (unlikely but possible)
+                                return { tasks: state.tasks.filter(t => t.id !== newRecord.id) };
                             }
                         }
                         return state;
                     });
                 })
-                .subscribe();
+                .subscribe((status) => {
+                    console.log('Realtime subscription status:', status);
+                    if (status === 'SUBSCRIBED') {
+                        // Good practice to fetch once connected to ensure we didn't miss anything while connecting
+                        // get().fetchTasks(); 
+                    }
+                });
         },
 
         unsubscribeFromTasks: () => {
@@ -223,3 +308,6 @@ export const useTaskStore = create<TaskState>((set, get) => {
         },
     };
 });
+
+// Need to import useAuthStore to get user ID inside subscribe without hook rules
+import { useAuthStore } from './authStore';
