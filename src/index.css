@@ -4,12 +4,17 @@
 
 @layer utilities {
   .glass-panel {
-    @apply backdrop-blur-xl bg-white/70 dark:bg-slate-900/40 border border-white/50 dark:border-white/10;
-    box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
+    /* Light Mode: Solid White, No blur, subtle border */
+    @apply bg-white border border-slate-200 shadow-xl;
+    /* Dark Mode: Glass effect overrides */
+    @apply dark:bg-slate-900/40 dark:backdrop-blur-xl dark:border-white/10;
   }
 
   .glass-card {
-    @apply backdrop-blur-md bg-white/80 dark:bg-slate-800/50 border border-white/60 dark:border-white/10 shadow-sm hover:shadow-md transition-all duration-300;
+    /* Light Mode: Solid White, border */
+    @apply bg-white border border-slate-100 shadow-sm hover:shadow-md transition-all duration-300;
+    /* Dark Mode: Glass effect overrides */
+    @apply dark:bg-slate-800/50 dark:backdrop-blur-md dark:border-white/10;
   }
 
   .glass-button {
