@@ -260,20 +260,20 @@ export const useTaskStore = create<TaskState>((set, get) => {
                         if (eventType === 'DELETE') {
                             set(state => ({
                                 tasks: state.tasks.filter(t => t.id !== oldRecord.id)
-                            })
-                        });
-        }
+                            }));
+                        }
+                    }
                 )
-    .subscribe(status => {
-        console.log('Subscription status:', status);  // Added: Debug subscription success
-    });
+                .subscribe(status => {
+                    console.log('Subscription status:', status);  // Added: Debug subscription success
+                });
         },
 
-unsubscribeFromTasks: () => {
-    if (realtimeChannel) {
-        supabase.removeChannel(realtimeChannel);
-        realtimeChannel = null;
-    }
-}
+        unsubscribeFromTasks: () => {
+            if (realtimeChannel) {
+                supabase.removeChannel(realtimeChannel);
+                realtimeChannel = null;
+            }
+        }
     };
 });
