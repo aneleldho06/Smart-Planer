@@ -4,6 +4,7 @@ import { BottomNav } from './components/BottomNav';
 import { TodayView } from './views/TodayView';
 import { WeeklyView } from './views/WeeklyView';
 import { MonthlyView } from './views/MonthlyView';
+import { ProjectsView } from './views/ProjectsView';
 import { OnboardingView } from './views/OnboardingView';
 import { AIChatView } from './views/AIChatView';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -21,6 +22,8 @@ function App() {
         return <WeeklyView />;
       case 'monthly':
         return <MonthlyView />;
+      case 'projects':
+        return <ProjectsView />;
       case 'ai':
         return <AIChatView />;
       default:

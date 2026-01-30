@@ -1,5 +1,5 @@
 import React from 'react';
-import { LayoutList, CalendarDays, CalendarRange, Sparkles } from 'lucide-react';
+import { LayoutList, CalendarDays, CalendarRange, Sparkles, Folder } from 'lucide-react';
 import { useUIStore, type ViewType } from '../stores/uiStore';
 import clsx from 'clsx';
 
@@ -10,6 +10,7 @@ export const BottomNav: React.FC = () => {
         { id: 'today', label: 'Today', icon: <LayoutList size={24} /> },
         { id: 'weekly', label: 'Week', icon: <CalendarDays size={24} /> },
         { id: 'monthly', label: 'Month', icon: <CalendarRange size={24} /> },
+        { id: 'projects', label: 'Projects', icon: <Folder size={24} /> },
         { id: 'ai', label: 'AI', icon: <Sparkles size={24} /> },
     ];
 

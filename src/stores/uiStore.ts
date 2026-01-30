@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 // import { persist } from 'zustand/middleware'; // Removed as per the new implementation
 
-export type ViewType = 'today' | 'weekly' | 'monthly' | 'ai';
+export type ViewType = 'today' | 'weekly' | 'monthly' | 'ai' | 'projects';
 export type ThemeType = 'light' | 'dark'; // This type is still defined, but the UIState's theme property is explicitly 'light' | 'dark'
 
 interface UIState {

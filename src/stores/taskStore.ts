@@ -9,12 +9,13 @@ export interface Task {
     createdAt: number;
     scheduledTime?: string; // HH:mm format
     isPriority?: boolean;
+    projectId?: string; // Link to a project
 }
 
 interface TaskState {
     tasks: Task[];
     lastActiveDate: number;
-    addTask: (title: string, scheduledTime?: string) => void;
+    addTask: (title: string, scheduledTime?: string, projectId?: string) => void;
     toggleTask: (id: string) => void;
     deleteTask: (id: string) => void;
     checkDailyReset: () => void;
@@ -30,13 +31,14 @@ export const useTaskStore = create<TaskState>()(
             lastActiveDate: Date.now(),
             notes: '',
 
-            addTask: (title: string, scheduledTime?: string) => {
+            addTask: (title: string, scheduledTime?: string, projectId?: string) => {
                 const newTask: Task = {
                     id: crypto.randomUUID(),
                     title,
                     completed: false,
                     createdAt: Date.now(),
                     scheduledTime,
+                    projectId,
                 };
                 set((state) => ({ tasks: [newTask, ...state.tasks] }));
             },
