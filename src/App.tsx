@@ -4,13 +4,14 @@ import { BottomNav } from './components/BottomNav';
 import { TodayView } from './views/TodayView';
 import { WeeklyView } from './views/WeeklyView';
 import { MonthlyView } from './views/MonthlyView';
+import { OnboardingView } from './views/OnboardingView';
 import { AIChatView } from './views/AIChatView';
 import { motion, AnimatePresence } from 'framer-motion';
 import bgImage from './assets/background_v2.png';
 import lightBg from './assets/light_mode_bg.png';
 
 function App() {
-  const { currentView, theme } = useUIStore();
+  const { currentView, theme, onboardingCompleted } = useUIStore();
 
   const renderView = () => {
     switch (currentView) {
@@ -41,7 +42,22 @@ function App() {
       <div className="fixed top-20 -right-20 h-72 w-72 rounded-full bg-purple-400/20 blur-3xl filter dark:bg-purple-900/20 z-0" />
       <div className="fixed bottom-0 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-blue-400/20 blur-3xl filter dark:bg-blue-900/20 z-0" />
 
-      <main className="relative z-10 mx-auto min-h-screen w-full max-w-7xl px-4 pt-4 md:px-8 md:pt-8">
+      {/* Onboarding Overlay */}
+      <AnimatePresence>
+        {!onboardingCompleted && (
+          <motion.div
+            key="onboarding"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 z-[100]"
+          >
+            <OnboardingView />
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      <main className="relative z-10 mx-auto min-h-screen w-full max-w-7xl px-4 pt-4 md:px-8 md:pt-8 w-inherit">
         <AnimatePresence mode="wait">
           <motion.div
             key={currentView}
