@@ -59,7 +59,7 @@ export const TodayView: React.FC = () => {
             {/* MIDDLE COLUMN: To-Do List */}
             <div className="flex w-full flex-col md:w-2/4">
                 <div className="glass-panel relative flex h-full flex-col overflow-hidden rounded-3xl p-6 shadow-xl">
-                    <div className="mb-6 flex items-center justify-between">
+                    <div className="mb-2 flex items-center justify-between">
                         <h2 className="text-2xl font-bold uppercase text-slate-800 dark:text-slate-100">To-Do List</h2>
                         <button
                             onClick={() => setIsModalOpen(true)}
@@ -67,6 +67,22 @@ export const TodayView: React.FC = () => {
                         >
                             <Plus size={16} /> ADD TASK
                         </button>
+                    </div>
+
+                    {/* Progress Bar */}
+                    <div className="mb-6">
+                        <div className="flex justify-between text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
+                            <span>PROGRESS</span>
+                            <span>{Math.round((completedTasks.length / (tasks.length || 1)) * 100)}%</span>
+                        </div>
+                        <div className="h-2 w-full overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
+                            <motion.div
+                                initial={{ width: 0 }}
+                                animate={{ width: `${(completedTasks.length / (tasks.length || 1)) * 100}%` }}
+                                transition={{ duration: 0.5, ease: "easeOut" }}
+                                className="h-full rounded-full bg-gradient-to-r from-teal-400 to-teal-500 shadow-[0_0_10px_rgba(45,212,191,0.5)]"
+                            />
+                        </div>
                     </div>
 
                     <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-3">
