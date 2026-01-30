@@ -7,10 +7,10 @@ export interface Task {
     id: string;
     title: string;
     completed: boolean;
-    created_at: number;
-    scheduled_time?: string;
-    is_priority?: boolean;
-    user_id?: string;
+    createdAt: number;
+    scheduledTime?: string;
+    isPriority?: boolean;
+    userId?: string;
 }
 
 interface TaskState {
@@ -19,9 +19,9 @@ interface TaskState {
     lastActiveDate: number;
     fetchTasks: () => Promise<void>;
     addTask: (title: string, scheduledTime?: string) => Promise<void>;
-    toggleTask: (id: string, currentStatus: boolean) => Promise<void>;
+    toggleTask: (id: string) => Promise<void>;
     deleteTask: (id: string) => Promise<void>;
-    togglePriority: (id: string, currentPriority: boolean) => Promise<void>;
+    togglePriority: (id: string) => Promise<void>;
     updateNotes: (content: string) => void;
     checkDailyReset: () => void;
     subscribeToTasks: () => void;
@@ -31,6 +31,17 @@ interface TaskState {
 
 export const useTaskStore = create<TaskState>((set, get) => {
     let realtimeChannel: RealtimeChannel | null = null;
+
+    // Helper to map DB snake_case record to Task interface
+    const mapRecord = (r: any): Task => ({
+        id: r.id,
+        title: r.title,
+        completed: r.completed,
+        createdAt: r.created_at,
+        scheduledTime: r.scheduled_time,
+        isPriority: r.is_priority,
+        userId: r.user_id
+    });
 
     return {
         tasks: [],
@@ -64,15 +75,14 @@ export const useTaskStore = create<TaskState>((set, get) => {
                 return;
             }
 
-            // DB returns snake_case, which matches our updated Task interface
-            set({ tasks: data as Task[], loading: false });
+            set({ tasks: data ? data.map(mapRecord) : [], loading: false });
         },
 
         addTask: async (title: string, scheduledTime?: string) => {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
 
-            const newTask = {
+            const newTaskDB = {
                 user_id: user.id,
                 title,
                 completed: false,
@@ -81,14 +91,22 @@ export const useTaskStore = create<TaskState>((set, get) => {
                 is_priority: false
             };
 
-            const { error } = await supabase.from('tasks').insert(newTask);
+            // We let the DB setup the ID usually, but if we want optimistic updates we might need it back.
+            // insert returns data if we ask for it using select()
+            const { error } = await supabase.from('tasks').insert(newTaskDB).select();
+
             if (error) console.error('Error adding task:', error);
+            // Realtime subscription will handle the UI update
         },
 
-        toggleTask: async (id: string, currentStatus: boolean) => {
+        toggleTask: async (id: string) => {
+            // Find current status from local state to toggle
+            const task = get().tasks.find(t => t.id === id);
+            if (!task) return;
+
             const { error } = await supabase
                 .from('tasks')
-                .update({ completed: !currentStatus })
+                .update({ completed: !task.completed })
                 .eq('id', id);
 
             if (error) console.error('Error toggling task:', error);
@@ -103,10 +121,13 @@ export const useTaskStore = create<TaskState>((set, get) => {
             if (error) console.error('Error deleting task:', error);
         },
 
-        togglePriority: async (id: string, currentPriority: boolean) => {
+        togglePriority: async (id: string) => {
+            const task = get().tasks.find(t => t.id === id);
+            if (!task) return;
+
             const { error } = await supabase
                 .from('tasks')
-                .update({ is_priority: !currentPriority })
+                .update({ is_priority: !task.isPriority })
                 .eq('id', id);
 
             if (error) console.error('Error toggling priority:', error);
@@ -114,12 +135,6 @@ export const useTaskStore = create<TaskState>((set, get) => {
 
         updateNotes: (content: string) => {
             set({ notes: content });
-            // TODO: Persist notes to Supabase if desired. For now, local state.
-            // If we want persistent notes, we need a 'notes' table or column.
-            // Requirement says "Persistent tasks", implies notes too maybe?
-            // "Priorities/Notes" section.
-            // Ignoring for now as schema didn't include notes table, 
-            // but we can add it to 'monthly_goals' or separate table later.
         },
 
         checkDailyReset: () => {
@@ -136,25 +151,14 @@ export const useTaskStore = create<TaskState>((set, get) => {
         subscribeToTasks: () => {
             if (realtimeChannel) return;
 
-            // Subscribe only to changes for this user would be ideal, but RLS handles it.
-            // We listen to all 'tasks' changes.
             realtimeChannel = supabase
                 .channel('tasks_channel')
                 .on('postgres_changes', { event: '*', schema: 'public', table: 'tasks' }, (payload) => {
                     const { eventType, new: newRecord, old: oldRecord } = payload;
-
-                    // We need to filter events. 
-                    // 1. Check if it belongs to current user is hard here without user ID in payload sometimes?
-                    //    Actually, RLS means we only receive our own events?
-                    //    Supabase Realtime respects RLS if 'broadcast' is off and we subscribe with token?
-                    //    Wait, standard realtime does NOT respect RLS automatically unless configured with "Walrus" (Postgres level).
-                    //    But for client-side filtering, we just check payloads.
-
-                    // Also need to check if the task belongs to "Today".
-                    // 'newRecord' has 'created_at'.
                     const todayStart = startOfDay(new Date()).getTime();
                     const todayEnd = endOfDay(new Date()).getTime();
 
+                    // Check if a record belongs to "Today" (based on created_at)
                     const isToday = (record: any) => {
                         return record.created_at >= todayStart && record.created_at <= todayEnd;
                     };
@@ -162,7 +166,7 @@ export const useTaskStore = create<TaskState>((set, get) => {
                     set((state) => {
                         if (eventType === 'INSERT') {
                             if (isToday(newRecord)) {
-                                return { tasks: [newRecord as Task, ...state.tasks] };
+                                return { tasks: [mapRecord(newRecord), ...state.tasks] };
                             }
                         } else if (eventType === 'DELETE') {
                             return { tasks: state.tasks.filter((t) => t.id !== oldRecord.id) };
@@ -170,16 +174,14 @@ export const useTaskStore = create<TaskState>((set, get) => {
                             if (isToday(newRecord)) {
                                 return {
                                     tasks: state.tasks.map((t) =>
-                                        t.id === newRecord.id ? (newRecord as Task) : t
+                                        t.id === newRecord.id ? mapRecord(newRecord) : t
                                     )
                                 };
                             } else {
-                                // If updated to be outside today (unlikely) or valid update but not today?
-                                // If it was in list, and date changed?
-                                // Just update it if it matches ID.
+                                // If updated task is no longer today (unlikely) or just needs update
                                 return {
                                     tasks: state.tasks.map((t) =>
-                                        t.id === newRecord.id ? (newRecord as Task) : t
+                                        t.id === newRecord.id ? mapRecord(newRecord) : t
                                     )
                                 };
                             }

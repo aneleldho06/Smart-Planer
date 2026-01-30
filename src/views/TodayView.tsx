@@ -6,13 +6,15 @@ import { TimelineSection } from '../components/TimelineSection';
 import { PrioritiesSection } from '../components/PrioritiesSection';
 import { NotesSection } from '../components/NotesSection';
 import { HeartMotivation } from '../components/HeartMotivation';
-import { format } from 'date-fns';
 import { Plus, X, Clock, Sun, Moon } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useAuthStore } from '../stores/authStore';
+import { LogOut } from 'lucide-react';
 
 export const TodayView: React.FC = () => {
     const { tasks, addTask, toggleTask, deleteTask, checkDailyReset } = useTaskStore();
     const { theme, toggleTheme } = useUIStore();
+    const { signOut } = useAuthStore();
 
     // Local state
     const [isModalOpen, setIsModalOpen] = useState(false);
@@ -111,16 +113,6 @@ export const TodayView: React.FC = () => {
                     <h2 className="flex-1 text-center text-xl font-bold uppercase tracking-wider text-slate-800 dark:text-slate-100">
                         Overview
                     </h2>
-                    import {useAuthStore} from '../stores/authStore';
-                    import {LogOut} from 'lucide-react';
-// ... previous imports
-
-export const TodayView: React.FC = () => {
-    const {tasks, addTask, toggleTask, deleteTask, checkDailyReset} = useTaskStore();
-                    const {theme, toggleTheme} = useUIStore();
-                    const {signOut} = useAuthStore();
-                    // ... (rest of the component until the theme toggle section)
-
                     {/* Theme Toggle Widget */}
                     <div className="flex gap-2">
                         <button
