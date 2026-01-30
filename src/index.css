@@ -4,12 +4,12 @@
 
 @layer utilities {
   .glass-panel {
-    @apply backdrop-blur-xl bg-white/40 dark:bg-slate-900/40 border border-white/30 dark:border-white/10;
+    @apply backdrop-blur-xl bg-white/70 dark:bg-slate-900/40 border border-white/50 dark:border-white/10;
     box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.07);
   }
 
   .glass-card {
-    @apply backdrop-blur-md bg-white/60 dark:bg-slate-800/50 border border-white/40 dark:border-white/10 shadow-sm hover:shadow-md transition-all duration-300;
+    @apply backdrop-blur-md bg-white/80 dark:bg-slate-800/50 border border-white/60 dark:border-white/10 shadow-sm hover:shadow-md transition-all duration-300;
   }
 
   .glass-button {

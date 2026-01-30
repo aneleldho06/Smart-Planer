@@ -7,6 +7,7 @@ import { MonthlyView } from './views/MonthlyView';
 import { AIChatView } from './views/AIChatView';
 import { motion, AnimatePresence } from 'framer-motion';
 import bgImage from './assets/background_v2.png';
+import lightBg from './assets/light_mode_bg.png';
 
 function App() {
   const { currentView, theme } = useUIStore();
@@ -31,8 +32,8 @@ function App() {
       className={`min-h-screen w-full transition-colors ${theme}`}
     >
       <div
-        className="fixed inset-0 w-full h-full bg-cover bg-fixed bg-center z-0"
-        style={{ backgroundImage: `url(${bgImage})` }}
+        className="fixed inset-0 w-full h-full bg-cover bg-fixed bg-center z-0 transition-all duration-500"
+        style={{ backgroundImage: `url(${theme === 'light' ? lightBg : bgImage})` }}
       />
 
       {/* Decorative ambient blobs */}
