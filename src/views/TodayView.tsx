@@ -146,9 +146,29 @@ export const TodayView: React.FC = () => {
                     </button>
                 </div>
 
-                <div className="flex h-[calc(100%-3rem)] flex-col">
-                    <PrioritiesSection />
-                    <NotesSection />
+                <div className="flex h-[calc(100%-3rem)] flex-col gap-4 overflow-hidden">
+                    {/* Dynamic Priorities Section */}
+                    <motion.div
+                        layout
+                        initial={false}
+                        className={`glass-panel flex w-full flex-col overflow-hidden rounded-2xl p-5 transition-all duration-500 ease-spring-smooth ${tasks.some(t => t.isPriority && !t.completed)
+                                ? 'max-h-[60%] min-h-[200px]'
+                                : 'min-h-[100px] shrink-0'
+                            }`}
+                        style={{ willChange: 'height' }}
+                    >
+                        <PrioritiesSection className="h-full" />
+                    </motion.div>
+
+                    {/* Dynamic Notes Section fills remaining space */}
+                    <motion.div
+                        layout
+                        className="glass-panel flex flex-1 w-full flex-col overflow-hidden rounded-2xl p-5"
+                        initial={false}
+                        transition={{ duration: 0.5, ease: "easeInOut" }}
+                    >
+                        <NotesSection className="h-full" />
+                    </motion.div>
                 </div>
             </div>
 

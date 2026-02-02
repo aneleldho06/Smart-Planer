@@ -3,13 +3,13 @@ import { useTaskStore } from '../stores/taskStore';
 import { Star, CheckCircle2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
-export const PrioritiesSection: React.FC = () => {
+export const PrioritiesSection: React.FC<{ className?: string }> = ({ className = '' }) => {
     const { tasks, toggleTask, togglePriority } = useTaskStore();
 
     const priorityTasks = tasks.filter(t => t.isPriority && !t.completed);
 
     return (
-        <div className="glass-panel flex h-[45%] flex-col overflow-hidden rounded-2xl p-5">
+        <div className={`flex flex-col ${className}`}>
             <h3 className="mb-4 flex items-center gap-2 text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100">
                 <Star className="fill-yellow-400 text-yellow-400" size={20} />
                 PRIORITIES

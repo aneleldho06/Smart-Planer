@@ -1,11 +1,11 @@
 import React from 'react';
 import { useTaskStore } from '../stores/taskStore';
 
-export const NotesSection: React.FC = () => {
+export const NotesSection: React.FC<{ className?: string }> = ({ className = '' }) => {
     const { notes, updateNotes } = useTaskStore();
 
     return (
-        <div className="glass-panel mt-4 flex h-[50%] flex-col overflow-hidden rounded-2xl p-5">
+        <div className={`flex flex-col ${className}`}>
             <h3 className="mb-2 text-lg font-bold tracking-tight text-slate-800 dark:text-slate-100">
                 NOTES
             </h3>
