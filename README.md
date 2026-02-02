@@ -23,7 +23,11 @@ An intelligent, glassmorphic productivity dashboard designed to help you organiz
 
 ## 📸 Screenshots
 
-> *[Screenshots relating to the Onboarding, Projects, and Calendar views will be attached here]*
+<img width="1034" height="746" alt="image" src="https://github.com/user-attachments/assets/04c9a7e0-e3b3-47c2-a959-99a1c5e5e729" />
+
+<img width="1314" height="746" alt="image" src="https://github.com/user-attachments/assets/15da74fb-faeb-490b-a9f3-cf844cfb454a" />
+
+
 
 ## ⚡ Quick Start
 
