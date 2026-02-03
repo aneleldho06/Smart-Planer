@@ -152,8 +152,8 @@ export const TodayView: React.FC = () => {
                         layout
                         initial={false}
                         className={`glass-panel flex w-full flex-col overflow-hidden rounded-2xl p-5 transition-all duration-500 ease-spring-smooth ${tasks.some(t => t.isPriority && !t.completed)
-                                ? 'max-h-[60%] min-h-[200px]'
-                                : 'min-h-[100px] shrink-0'
+                            ? 'max-h-[60%] min-h-[200px]'
+                            : 'min-h-[100px] shrink-0'
                             }`}
                         style={{ willChange: 'height' }}
                     >
